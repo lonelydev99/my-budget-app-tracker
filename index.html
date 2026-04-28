@@ -3,6 +3,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Budget Tracker">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <style>
 :root {
@@ -20,38 +21,57 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background-color: #f0f2f5; /* Light grey background for the whole page */
+  background-color: #f0f2f5;
   font-family: var(--font-sans);
+  /* Prevents accidental side-scrolling on mobile */
+  overflow-x: hidden; 
 }
 
 .app {
-  max-width: 380px;
+  /* CHANGE: Use 100% width for mobile, but keep 380px for desktop */
+  width: 100%;
+  max-width: 450px; 
   margin: 0 auto;
-  padding-bottom: 68px;
+  padding-bottom: 80px;
   background-color: var(--color-background-primary);
   min-height: 100vh;
-  box-shadow: 0 0 20px rgba(0,0,0,0.05); /* Adds a nice mobile-app shadow on desktop */
 }
 
-/* KEEP ALL YOUR OTHER CSS BELOW THIS POINT */
-.header { padding: 14px 16px 10px; border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; justify-content: space-between; }
-.header h1 { font-size: 17px; font-weight: 500; color: var(--color-text-primary); }
-.header p { font-size: 12px; color: var(--color-text-secondary); margin-top: 1px; }
-.export-btn { border: 0.5px solid var(--color-border-secondary); background: transparent; border-radius: var(--border-radius-md); padding: 5px 10px; font-size: 11px; cursor: pointer; color: var(--color-text-primary); }
-.salary-bar { display: flex; align-items: center; gap: 8px; padding: 9px 16px; background: var(--color-background-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); }
-.salary-bar label { font-size: 13px; color: var(--color-text-secondary); white-space: nowrap; }
-.salary-bar input { flex: 1; border: none; background: transparent; font-size: 15px; font-weight: 500; color: var(--color-text-primary); text-align: right; outline: none; }
-.tab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 380px; display: flex; background: var(--color-background-primary); border-top: 0.5px solid var(--color-border-tertiary); z-index: 10; }
-.tab-btn { flex: 1; padding: 7px 0 11px; border: none; background: transparent; font-size: 9px; color: var(--color-text-secondary); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.tab-btn.active { color: #0F6E56; }
-.tab-icon { font-size: 15px; }
-.section { padding: 12px 16px; }
-.metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
-.metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 9px 11px; }
-.metric-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 3px; }
-.metric-value { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
-.card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 13px; margin-bottom: 10px; }
-.card-title { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .04em; }
+/* CHANGE: Make the bottom bar stay at the very bottom of the screen */
+.tab-bar { 
+  position: fixed; 
+  bottom: 0; 
+  left: 0;
+  right: 0;
+  width: 100%; /* Changed from fixed width to 100% */
+  display: flex; 
+  background: var(--color-background-primary); 
+  border-top: 0.5px solid var(--color-border-tertiary); 
+  z-index: 100;
+  /* Adds space for iPhone "home bar" */
+  padding-bottom: env(safe-area-inset-bottom); 
+}
+
+.header { padding: 16px; border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; justify-content: space-between; }
+.header h1 { font-size: 18px; font-weight: 600; color: var(--color-text-primary); }
+.header p { font-size: 12px; color: var(--color-text-secondary); }
+
+.salary-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--color-background-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); }
+.salary-bar input { flex: 1; border: none; background: transparent; font-size: 16px; font-weight: 600; text-align: right; outline: none; }
+
+.section { padding: 16px; }
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; }
+.metric-value { font-size: 20px; font-weight: 600; }
+
+.card { background: var(--color-background-primary); border: 1px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+
+.tab-btn { flex: 1; padding: 10px 0; border: none; background: transparent; font-size: 10px; color: var(--color-text-secondary); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.tab-btn.active { color: #0F6E56; font-weight: 600; }
+.tab-icon { font-size: 18px; }
+
+/* Hide the helper text at the very top */
+.sr-only { display: none; }
 </style>
 
 <div class="app">
