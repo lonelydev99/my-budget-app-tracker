@@ -7,14 +7,12 @@ const ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 ];
 
-// Install & Cache Assets
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
-// Serve from Cache when Offline
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((response) => response || fetch(e.request))
