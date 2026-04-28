@@ -1,6 +1,6 @@
 const CACHE_NAME = 'budget-tracker-v1';
 const ASSETS = [
-  './tracker.html',
+  './index.html',
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js',
   'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js',
