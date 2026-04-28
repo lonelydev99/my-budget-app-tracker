@@ -1,0 +1,16 @@
+{
+  "name": "PH Budget Tracker",
+  "short_name": "Budget",
+  "start_url": "./tracker.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0F6E56",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2454/2454282.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

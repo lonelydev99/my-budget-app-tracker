@@ -1,0 +1,557 @@
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F6E56">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Budget Tracker">
+<h2 class="sr-only">Monthly Budget Tracker with loans, bills, savings, and email notifications</h2>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.app{max-width:380px;margin:0 auto;padding-bottom:68px;font-family:var(--font-sans)}
+.header{padding:14px 16px 10px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:17px;font-weight:500;color:var(--color-text-primary)}
+.header p{font-size:12px;color:var(--color-text-secondary);margin-top:1px}
+.export-btn{border:0.5px solid var(--color-border-secondary);background:transparent;border-radius:var(--border-radius-md);padding:5px 10px;font-size:11px;cursor:pointer;color:var(--color-text-primary)}
+.salary-bar{display:flex;align-items:center;gap:8px;padding:9px 16px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.salary-bar label{font-size:13px;color:var(--color-text-secondary);white-space:nowrap}
+.salary-bar input{flex:1;border:none;background:transparent;font-size:15px;font-weight:500;color:var(--color-text-primary);text-align:right;outline:none}
+.tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:380px;display:flex;background:var(--color-background-primary);border-top:0.5px solid var(--color-border-tertiary);z-index:10}
+.tab-btn{flex:1;padding:7px 0 11px;border:none;background:transparent;font-size:9px;color:var(--color-text-secondary);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tab-btn.active{color:#0F6E56}
+.tab-icon{font-size:15px}
+.section{padding:12px 16px}
+.banner{border-radius:var(--border-radius-md);padding:9px 12px;margin-bottom:10px;font-size:12px;display:flex;gap:8px;align-items:flex-start}
+.banner-warn{background:#FAEEDA;color:#633806;border:0.5px solid #EF9F27}
+.banner-danger{background:#FCEBEB;color:#501313;border:0.5px solid #E24B4A}
+.banner-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px 11px}
+.metric-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px}
+.metric-value{font-size:18px;font-weight:500;color:var(--color-text-primary)}
+.metric-value.green{color:#0F6E56}.metric-value.amber{color:#854F0B}.metric-value.red{color:#A32D2D}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:13px;margin-bottom:10px}
+.card-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+.chart-wrap{position:relative;width:100%;height:190px}
+.bill-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.bill-item:last-child{border-bottom:none}
+.bill-item.due-soon{background:#FAEEDA;border-radius:var(--border-radius-md);padding:8px;margin:0 -8px;width:calc(100% + 16px)}
+.bill-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.bill-info{flex:1;min-width:0}
+.bill-name{font-size:13px;color:var(--color-text-primary);font-weight:500}
+.bill-meta{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+.bill-right{text-align:right;flex-shrink:0}
+.bill-amount{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.bill-due-badge{font-size:10px;background:#EF9F27;color:#412402;border-radius:4px;padding:1px 5px;margin-top:2px;display:inline-block}
+.bill-del{border:none;background:transparent;color:var(--color-text-secondary);cursor:pointer;font-size:15px;padding:2px 4px;margin-left:2px}
+.badge-rec{font-size:10px;background:#E1F5EE;color:#085041;border-radius:4px;padding:1px 5px;margin-left:4px}
+.add-form{display:flex;flex-direction:column;gap:7px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary)}
+.add-form input,.add-form select{width:100%;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-size:13px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.toggle-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--color-text-secondary)}
+.toggle-row input[type=checkbox]{width:15px;height:15px;cursor:pointer}
+.add-btn{background:#0F6E56;color:#E1F5EE;border:none;border-radius:var(--border-radius-md);padding:8px;font-size:13px;font-weight:500;cursor:pointer}
+.add-btn.blue{background:#185FA5;color:#E6F1FB}
+.progress-bar-bg{height:9px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden;margin-bottom:5px}
+.progress-bar-fill{height:100%;border-radius:99px;background:#0F6E56;transition:width 0.4s}
+.progress-bar-fill.amber{background:#854F0B}.progress-bar-fill.red{background:#A32D2D}
+.progress-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-secondary)}
+.savings-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.savings-row:last-child{border-bottom:none}
+.setting-row{padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px}
+.setting-sub{font-size:11px;color:var(--color-text-secondary);margin-bottom:7px}
+.setting-row input[type=range]{width:100%;margin-bottom:3px}
+.threshold-val{font-size:11px;color:var(--color-text-secondary);text-align:right}
+.send-btn{background:#185FA5;color:#E6F1FB;border:none;border-radius:var(--border-radius-md);padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;width:100%;margin-top:6px}
+.send-status{font-size:11px;margin-top:5px;text-align:center;min-height:16px}
+.emailjs-note{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px;font-size:11px;color:var(--color-text-secondary);margin-top:8px;line-height:1.6}
+.emailjs-note a{color:#0F6E56}
+.empty{text-align:center;padding:18px 0;color:var(--color-text-secondary);font-size:12px}
+
+/* Loans */
+.loan-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:10px;overflow:hidden}
+.loan-header{padding:12px 13px;display:flex;align-items:flex-start;gap:10px}
+.loan-avatar{width:36px;height:36px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#185FA5;flex-shrink:0}
+.loan-info{flex:1;min-width:0}
+.loan-name{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+.loan-sub{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.loan-badges{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.loan-badge{font-size:10px;border-radius:4px;padding:2px 6px;font-weight:500}
+.badge-principal{background:#E6F1FB;color:#0C447C}
+.badge-interest{background:#FAEEDA;color:#633806}
+.badge-total{background:#EAF3DE;color:#27500A}
+.badge-overdue{background:#FCEBEB;color:#791F1F}
+.loan-actions{display:flex;gap:6px;align-items:flex-start;flex-shrink:0}
+.loan-del-btn{border:none;background:transparent;color:var(--color-text-secondary);cursor:pointer;font-size:15px;padding:2px}
+.loan-toggle-btn{border:0.5px solid var(--color-border-secondary);background:transparent;border-radius:var(--border-radius-md);padding:4px 8px;font-size:11px;cursor:pointer;color:var(--color-text-secondary)}
+.schedule-wrap{border-top:0.5px solid var(--color-border-tertiary);padding:10px 13px}
+.schedule-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
+.sched-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.sched-row:last-child{border-bottom:none}
+.sched-num{width:18px;text-align:center;color:var(--color-text-secondary);flex-shrink:0}
+.sched-date{flex:1;color:var(--color-text-primary)}
+.sched-amount{color:var(--color-text-primary);font-weight:500;min-width:60px;text-align:right}
+.sched-status{min-width:55px;text-align:right}
+.sched-paid-badge{font-size:10px;background:#EAF3DE;color:#27500A;border-radius:4px;padding:1px 5px}
+.sched-due-badge{font-size:10px;background:#FAEEDA;color:#633806;border-radius:4px;padding:1px 5px}
+.sched-overdue-badge{font-size:10px;background:#FCEBEB;color:#791F1F;border-radius:4px;padding:1px 5px}
+.sched-pay-btn{font-size:10px;border:0.5px solid var(--color-border-secondary);background:transparent;border-radius:4px;padding:1px 6px;cursor:pointer;color:var(--color-text-secondary)}
+.loan-notify-btn{border:none;background:#185FA5;color:#E6F1FB;border-radius:var(--border-radius-md);padding:5px 10px;font-size:11px;cursor:pointer;margin-top:8px;width:100%}
+.section-label{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+</style>
+
+<div class="app">
+<div class="header">
+  <div>
+    <h1>Budget Tracker</h1>
+    <p id="month-label"></p>
+  </div>
+  <button class="export-btn" id="export-btn">Export PDF</button>
+</div>
+<div class="salary-bar">
+  <label>Monthly Salary</label>
+  <span style="font-size:13px;color:var(--color-text-secondary)">₱</span>
+  <input type="number" id="salary-input" placeholder="0" min="0"/>
+</div>
+
+<!-- DASHBOARD -->
+<div id="tab-dashboard" class="section" style="display:none">
+  <div id="banner-area"></div>
+  <div id="due-soon-area"></div>
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">Salary</div><div class="metric-value" id="m-salary">₱0</div></div>
+    <div class="metric"><div class="metric-label">Total Bills</div><div class="metric-value" id="m-bills">₱0</div></div>
+    <div class="metric"><div class="metric-label">Savings Goal</div><div class="metric-value amber" id="m-goal">₱0</div></div>
+    <div class="metric"><div class="metric-label">Remaining</div><div class="metric-value green" id="m-remaining">₱0</div></div>
+  </div>
+  <div class="metric-grid" style="margin-bottom:10px">
+    <div class="metric"><div class="metric-label">Total Lent</div><div class="metric-value amber" id="m-lent">₱0</div></div>
+    <div class="metric"><div class="metric-label">Expected Back</div><div class="metric-value green" id="m-expected">₱0</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Bills by category</div>
+    <div id="chart-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;font-size:11px;color:var(--color-text-secondary)"></div>
+    <div class="chart-wrap"><canvas id="pie-chart" role="img" aria-label="Doughnut chart of bills by category">Bills by category</canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Savings progress</div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="savings-bar" style="width:0%"></div></div>
+    <div class="progress-labels"><span id="sav-pct">0% of goal</span><span id="sav-left"></span></div>
+  </div>
+</div>
+
+<!-- BILLS -->
+<div id="tab-bills" class="section" style="display:none">
+  <div class="card">
+    <div class="card-title">My bills</div>
+    <div id="bills-list"></div>
+    <div class="add-form">
+      <input type="text" id="bill-name" placeholder="Bill name (e.g. Meralco)" maxlength="40"/>
+      <select id="bill-cat">
+        <option value="">Select category</option>
+        <option>Housing / Rent</option><option>Utilities</option><option>Food</option>
+        <option>Transport</option><option>Healthcare</option><option>Education</option>
+        <option>Entertainment</option><option>Others</option>
+      </select>
+      <div class="form-row">
+        <input type="number" id="bill-amount" placeholder="Amount (₱)" min="0"/>
+        <input type="date" id="bill-due"/>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="bill-recurring"/>
+        <label for="bill-recurring">Recurring monthly</label>
+      </div>
+      <button class="add-btn" id="add-bill-btn">Add bill</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVINGS -->
+<div id="tab-savings" class="section" style="display:none">
+  <div class="card">
+    <div class="card-title">Savings goal</div>
+    <div class="add-form" style="border-top:none;padding-top:0;margin-top:0">
+      <input type="number" id="goal-input" placeholder="Target savings (₱)" min="0"/>
+      <button class="add-btn" id="set-goal-btn">Set goal</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Breakdown</div>
+    <div id="savings-breakdown"></div>
+  </div>
+</div>
+
+<!-- LOANS -->
+<div id="tab-loans" class="section" style="display:none">
+  <div id="loans-list"></div>
+  <div class="card">
+    <div class="card-title">Lend money to a friend</div>
+    <div class="add-form" style="border-top:none;padding-top:0;margin-top:0">
+      <input type="text" id="l-name" placeholder="Friend's name" maxlength="40"/>
+      <input type="email" id="l-email" placeholder="Friend's email (for notifications)"/>
+      <div class="form-row">
+        <input type="number" id="l-principal" placeholder="Amount (₱)" min="0"/>
+        <input type="number" id="l-rate" placeholder="Interest %" min="0" step="0.1"/>
+      </div>
+      <div class="form-row">
+        <input type="number" id="l-installments" placeholder="# of payments" min="1" step="1"/>
+        <select id="l-freq">
+          <option value="monthly">Monthly</option>
+          <option value="weekly">Weekly</option>
+        </select>
+      </div>
+      <div style="font-size:11px;color:var(--color-text-secondary)">Start date (first payment period begins here)</div>
+      <input type="date" id="l-start"/>
+      <div id="l-preview" style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px;font-size:12px;color:var(--color-text-secondary);display:none"></div>
+      <button class="add-btn blue" id="add-loan-btn">Add loan</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="tab-settings" class="section" style="display:none">
+  <div class="card">
+    <div class="card-title">Budget warning</div>
+    <div class="setting-row">
+      <div class="setting-label">Warning threshold</div>
+      <div class="setting-sub">Alert when bills exceed this % of salary</div>
+      <input type="range" id="threshold-slider" min="50" max="95" step="5" value="80"/>
+      <div class="threshold-val" id="threshold-val">80% of salary</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">EmailJS setup</div>
+    <div class="setting-row">
+      <div class="setting-label">Your email</div>
+      <div class="setting-sub">Used for bill due-date alerts to yourself</div>
+      <input type="email" id="email-input" placeholder="yourname@gmail.com" style="width:100%;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-size:13px"/>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">Credentials</div>
+      <div class="setting-sub">One EmailJS account works for both your bill alerts and friend loan reminders</div>
+      <input type="text" id="ejs-service" placeholder="Service ID" style="width:100%;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-size:13px;margin-bottom:6px"/>
+      <input type="text" id="ejs-template" placeholder="Template ID (bill alerts)" style="width:100%;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-size:13px;margin-bottom:6px"/>
+      <input type="text" id="ejs-loan-template" placeholder="Template ID (loan reminders)" style="width:100%;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-size:13px;margin-bottom:6px"/>
+      <input type="text" id="ejs-pubkey" placeholder="Public Key" style="width:100%;padding:7px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-size:13px"/>
+      <button class="send-btn" id="test-email-btn">Send test bill alert</button>
+      <div class="send-status" id="send-status"></div>
+      <div class="emailjs-note">
+        <strong>Setup (free):</strong><br>
+        1. <a href="https://www.emailjs.com" target="_blank">emailjs.com</a> → free account<br>
+        2. Add your Gmail/email service<br>
+        3. Create <strong>2 templates</strong>:<br>
+        &nbsp;&nbsp;• Bill alert: <code>{{to_email}}</code>, <code>{{bill_name}}</code>, <code>{{due_date}}</code>, <code>{{amount}}</code><br>
+        &nbsp;&nbsp;• Loan reminder: <code>{{to_email}}</code>, <code>{{friend_name}}</code>, <code>{{installment_num}}</code>, <code>{{due_date}}</code>, <code>{{amount}}</code>, <code>{{days_left}}</code><br>
+        4. Paste Service ID, both Template IDs, and Public Key above
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Export</div>
+    <div class="setting-row">
+      <div class="setting-label">Download PDF summary</div>
+      <div class="setting-sub">Includes bills, savings, and all loan schedules</div>
+      <button class="add-btn" id="export-btn2" style="margin-top:6px;width:100%">Export as PDF</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="dashboard"><span class="tab-icon">📊</span>Dashboard</button>
+  <button class="tab-btn" data-tab="bills"><span class="tab-icon">🧾</span>Bills</button>
+  <button class="tab-btn" data-tab="savings"><span class="tab-icon">💰</span>Savings</button>
+  <button class="tab-btn" data-tab="loans"><span class="tab-icon">🤝</span>Loans</button>
+  <button class="tab-btn" data-tab="settings"><span class="tab-icon">⚙️</span>Settings</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const state={salary:0,bills:[],savingsGoal:0,threshold:80,email:'',ejsService:'',ejsTemplate:'',ejsLoanTemplate:'',ejsPubkey:'',loans:[]};
+const CAT_COLORS={'Housing / Rent':'#0F6E56','Utilities':'#3266ad','Food':'#854F0B','Transport':'#6B3A9E','Healthcare':'#D85A30','Education':'#1D9E75','Entertainment':'#D4537E','Others':'#888780'};
+const fmt=n=>'₱'+Math.round(n).toLocaleString('en-PH');
+const fmtD=n=>'₱'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const now=new Date();
+document.getElementById('month-label').textContent=months[now.getMonth()]+' '+now.getFullYear();
+let pieChart=null;
+
+function totalBills(){return state.bills.reduce((s,b)=>s+b.amount,0);}
+function remaining(){return state.salary-totalBills();}
+function daysUntil(ds){const t=new Date();t.setHours(0,0,0,0);const d=new Date(ds);d.setHours(0,0,0,0);return Math.ceil((d-t)/(864e5));}
+function dueSoonBills(){return state.bills.filter(b=>{if(!b.dueDate)return false;const d=daysUntil(b.dueDate);return d>=0&&d<=5;});}
+function initials(n){return n.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'??';}
+
+function getLoanSchedule(loan){
+  const interest=loan.principal*(loan.interestRate/100);
+  const total=loan.principal+interest;
+  const per=total/loan.installments;
+  const schedule=[];
+  for(let i=0;i<loan.installments;i++){
+    const d=new Date(loan.startDate);
+    if(loan.frequency==='weekly') d.setDate(d.getDate()+(i+1)*7);
+    else{d.setMonth(d.getMonth()+(i+1));}
+    schedule.push({num:i+1,amount:per,dueDate:d.toISOString().split('T')[0],paid:loan.paid[i]||false});
+  }
+  return{total,interest,perPayment:per,schedule};
+}
+
+function totalLent(){return state.loans.reduce((s,l)=>s+l.principal,0);}
+function totalExpected(){return state.loans.reduce((s,l)=>{const sc=getLoanSchedule(l);return s+sc.schedule.filter(r=>!r.paid).reduce((a,r)=>a+r.amount,0);},0);}
+
+function render(){
+  const total=totalBills();const rem=remaining();const goal=state.savingsGoal;
+  document.getElementById('m-salary').textContent=fmt(state.salary);
+  document.getElementById('m-bills').textContent=fmt(total);
+  document.getElementById('m-goal').textContent=fmt(goal);
+  const re=document.getElementById('m-remaining');re.textContent=fmt(rem);re.className='metric-value'+(rem<0?' red':rem===0?'':' green');
+  document.getElementById('m-lent').textContent=fmt(totalLent());
+  document.getElementById('m-expected').textContent=fmtD(totalExpected());
+  renderBanners();renderDueSoon();renderBillsList();renderChart();renderSavingsProgress();renderSavingsBreakdown();renderLoans();
+}
+
+function renderBanners(){
+  const total=totalBills();const pct=state.salary>0?(total/state.salary*100):0;
+  let h='';
+  if(state.salary>0&&pct>=state.threshold&&pct<100) h+=`<div class="banner banner-warn"><span class="banner-icon">⚠️</span><div><strong>Budget warning:</strong> Bills are ${Math.round(pct)}% of your salary.</div></div>`;
+  else if(state.salary>0&&pct>=100) h+=`<div class="banner banner-danger"><span class="banner-icon">🚨</span><div><strong>Over budget!</strong> Bills exceed your salary by ${fmt(total-state.salary)}.</div></div>`;
+  document.getElementById('banner-area').innerHTML=h;
+}
+
+function renderDueSoon(){
+  const soon=dueSoonBills();const el=document.getElementById('due-soon-area');
+  if(!soon.length){el.innerHTML='';return;}
+  const items=soon.map(b=>{const d=daysUntil(b.dueDate);const lbl=d===0?'Today':d===1?'Tomorrow':`${d} days`;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid rgba(239,159,39,.3)"><div><div style="font-size:12px;font-weight:500;color:#412402">${b.name}</div><div style="font-size:11px;color:#633806">${lbl} · ${b.cat}</div></div><div style="font-size:12px;font-weight:500;color:#412402">${fmt(b.amount)}</div></div>`;
+  }).join('');
+  el.innerHTML=`<div class="banner banner-warn" style="flex-direction:column;align-items:stretch;gap:0"><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span class="banner-icon">🔔</span><strong style="font-size:11px;color:#412402;text-transform:uppercase;letter-spacing:.04em">${soon.length} bill${soon.length>1?'s':''} due within 5 days</strong></div>${items}</div>`;
+}
+
+function renderBillsList(){
+  const el=document.getElementById('bills-list');
+  if(!state.bills.length){el.innerHTML='<div class="empty">No bills added yet</div>';return;}
+  el.innerHTML=state.bills.map((b,i)=>{
+    const soon=b.dueDate&&daysUntil(b.dueDate)>=0&&daysUntil(b.dueDate)<=5;
+    const d=b.dueDate?daysUntil(b.dueDate):null;
+    return `<div class="bill-item${soon?' due-soon':''}">
+      <div class="bill-dot" style="background:${CAT_COLORS[b.cat]||'#888'}"></div>
+      <div class="bill-info"><div class="bill-name">${b.name}${b.recurring?'<span class="badge-rec">↻</span>':''}</div><div class="bill-meta">${b.cat}${b.dueDate?' · Due '+new Date(b.dueDate).toLocaleDateString('en-PH',{month:'short',day:'numeric'}):''}</div></div>
+      <div class="bill-right"><div class="bill-amount">${fmt(b.amount)}</div>${b.dueDate&&d<=5&&d>=0?`<div class="bill-due-badge">${d===0?'Today':d===1?'Tomorrow':d+' days'}</div>`:''}</div>
+      <button class="bill-del" data-i="${i}">×</button>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.bill-del').forEach(btn=>btn.addEventListener('click',()=>{state.bills.splice(+btn.dataset.i,1);render();}));
+}
+
+function renderChart(){
+  const ct={};state.bills.forEach(b=>{ct[b.cat]=(ct[b.cat]||0)+b.amount;});
+  const labels=Object.keys(ct);const data=labels.map(l=>ct[l]);const colors=labels.map(l=>CAT_COLORS[l]||'#888');const total=data.reduce((a,b)=>a+b,0);
+  document.getElementById('chart-legend').innerHTML=labels.length?labels.map((l,i)=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:${colors[i]}"></span>${l} ${total>0?Math.round(data[i]/total*100)+'%':''}</span>`).join(''):'<span style="font-size:12px">Add bills to see breakdown</span>';
+  if(pieChart){pieChart.destroy();pieChart=null;}
+  if(!labels.length)return;
+  pieChart=new Chart(document.getElementById('pie-chart').getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'transparent'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+fmt(ctx.raw)}}}}});
+}
+
+function renderSavingsProgress(){
+  const rem=remaining();const goal=state.savingsGoal;const pct=goal>0?Math.min(100,Math.round(rem/goal*100)):0;
+  const bar=document.getElementById('savings-bar');bar.style.width=pct+'%';bar.className='progress-bar-fill'+(pct<50?' red':pct<80?' amber':'');
+  document.getElementById('sav-pct').textContent=pct+'% of goal';
+  document.getElementById('sav-left').textContent=goal>0&&rem<goal?fmt(goal-rem)+' to go':(rem>=goal&&goal>0?'✓ Goal reached!':'');
+}
+
+function renderSavingsBreakdown(){
+  const total=totalBills();const rem=remaining();const goal=state.savingsGoal;
+  const rows=[['Salary',fmt(state.salary),''],['Total bills','− '+fmt(total),''],['Savings goal','− '+fmt(goal),''],['Net balance',fmt(rem-goal),rem-goal>=0?'green':'red']];
+  document.getElementById('savings-breakdown').innerHTML=rows.map(([l,v,c])=>`<div class="savings-row"><span style="font-size:12px;color:var(--color-text-secondary)">${l}</span><span style="font-size:12px;font-weight:500;color:${c==='green'?'#0F6E56':c==='red'?'#A32D2D':'var(--color-text-primary)'}">${v}</span></div>`).join('');
+}
+
+function renderLoans(){
+  const el=document.getElementById('loans-list');
+  if(!state.loans.length){el.innerHTML='<div class="empty" style="color:var(--color-text-secondary);font-size:12px;padding:8px 0 12px">No loans recorded yet. Add one below.</div>';return;}
+  el.innerHTML=state.loans.map((loan,li)=>{
+    const sc=getLoanSchedule(loan);
+    const paidCount=loan.paid.filter(Boolean).length;
+    const remaining=sc.schedule.filter(r=>!r.paid);
+    const nextDue=remaining.length?remaining[0]:null;
+    const overdue=remaining.filter(r=>daysUntil(r.dueDate)<0).length;
+    const dueSoon=remaining.filter(r=>{const d=daysUntil(r.dueDate);return d>=0&&d<=5;}).length;
+    const showSched=loan.showSchedule||false;
+
+    const schedRows=sc.schedule.map((row,ri)=>{
+      const d=daysUntil(row.dueDate);
+      let badge='';
+      if(row.paid) badge=`<span class="sched-paid-badge">Paid</span>`;
+      else if(d<0) badge=`<span class="sched-overdue-badge">Overdue</span>`;
+      else if(d<=5) badge=`<span class="sched-due-badge">${d===0?'Today':d===1?'Tomorrow':d+'d'}</span>`;
+      const payBtn=row.paid?'':`<button class="sched-pay-btn" data-li="${li}" data-ri="${ri}">Mark paid</button>`;
+      return `<div class="sched-row">
+        <span class="sched-num">${row.num}</span>
+        <span class="sched-date">${new Date(row.dueDate).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}</span>
+        <span class="sched-amount">${fmtD(row.amount)}</span>
+        <span class="sched-status">${badge||payBtn}</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="loan-card">
+      <div class="loan-header">
+        <div class="loan-avatar">${initials(loan.friendName)}</div>
+        <div class="loan-info">
+          <div class="loan-name">${loan.friendName}</div>
+          <div class="loan-sub">${loan.email||'No email'} · ${loan.frequency==='weekly'?'Weekly':'Monthly'} · ${paidCount}/${loan.installments} paid</div>
+          <div class="loan-badges">
+            <span class="loan-badge badge-principal">Principal: ${fmt(loan.principal)}</span>
+            <span class="loan-badge badge-interest">Interest: ${loan.interestRate}% (${fmt(sc.interest)})</span>
+            <span class="loan-badge badge-total">Total: ${fmtD(sc.total)}</span>
+            ${overdue?`<span class="loan-badge badge-overdue">${overdue} overdue</span>`:''}
+          </div>
+        </div>
+        <div class="loan-actions">
+          <button class="loan-toggle-btn" data-li="${li}">${showSched?'Hide':'Schedule'}</button>
+          <button class="loan-del-btn" data-del="${li}">×</button>
+        </div>
+      </div>
+      ${showSched?`<div class="schedule-wrap">
+        <div class="schedule-title">Repayment Schedule — ${fmtD(sc.perPayment)} per payment</div>
+        ${schedRows}
+        ${loan.email?`<button class="loan-notify-btn" data-notify="${li}">Send reminder to ${loan.friendName}</button>`:''}
+        <div class="send-status" id="loan-status-${li}"></div>
+      </div>`:''}
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.loan-toggle-btn').forEach(btn=>btn.addEventListener('click',()=>{const i=+btn.dataset.li;state.loans[i].showSchedule=!state.loans[i].showSchedule;renderLoans();}));
+  el.querySelectorAll('.loan-del-btn').forEach(btn=>btn.addEventListener('click',()=>{state.loans.splice(+btn.dataset.del,1);render();}));
+  el.querySelectorAll('.sched-pay-btn').forEach(btn=>btn.addEventListener('click',()=>{const li=+btn.dataset.li;const ri=+btn.dataset.ri;state.loans[li].paid[ri]=true;renderLoans();render();}));
+  el.querySelectorAll('.loan-notify-btn').forEach(btn=>btn.addEventListener('click',()=>sendLoanReminder(+btn.dataset.notify)));
+}
+
+async function sendLoanReminder(li){
+  const loan=state.loans[li];const sc=getLoanSchedule(loan);
+  const svc=state.ejsService;const tpl=state.ejsLoanTemplate;const pk=state.ejsPubkey;
+  const statusEl=document.getElementById('loan-status-'+li);
+  if(!svc||!tpl||!pk){statusEl.style.color='#A32D2D';statusEl.textContent='Set up EmailJS in Settings first.';return;}
+  if(!loan.email){statusEl.style.color='#A32D2D';statusEl.textContent="No email for this friend.";return;}
+  const upcoming=sc.schedule.filter(r=>!r.paid&&daysUntil(r.dueDate)>=0&&daysUntil(r.dueDate)<=5);
+  const next=sc.schedule.find(r=>!r.paid);
+  const target=upcoming.length?upcoming[0]:next;
+  if(!target){statusEl.style.color='#0F6E56';statusEl.textContent='All payments completed!';return;}
+  statusEl.style.color='#854F0B';statusEl.textContent='Sending…';
+  try{
+    emailjs.init(pk);
+    await emailjs.send(svc,tpl,{to_email:loan.email,friend_name:loan.friendName,installment_num:target.num,due_date:new Date(target.dueDate).toLocaleDateString('en-PH',{month:'long',day:'numeric',year:'numeric'}),amount:fmtD(target.amount),days_left:Math.max(0,daysUntil(target.dueDate)),total_payments:loan.installments,frequency:loan.frequency});
+    statusEl.style.color='#0F6E56';statusEl.textContent='Reminder sent to '+loan.email+'!';
+  }catch(e){statusEl.style.color='#A32D2D';statusEl.textContent='Failed: '+(e.text||'Check credentials.');}
+}
+
+function updateLoanPreview(){
+  const p=parseFloat(document.getElementById('l-principal').value)||0;
+  const r=parseFloat(document.getElementById('l-rate').value)||0;
+  const n=parseInt(document.getElementById('l-installments').value)||0;
+  const f=document.getElementById('l-freq').value;
+  const prev=document.getElementById('l-preview');
+  if(p>0&&n>0){
+    const interest=p*(r/100);const total=p+interest;const per=total/n;
+    prev.style.display='block';
+    prev.innerHTML=`<strong>Preview:</strong><br>Total interest: ${fmtD(interest)}<br>Total to repay: ${fmtD(total)}<br>Per ${f==='weekly'?'week':'month'}: <strong>${fmtD(per)}</strong>`;
+  } else prev.style.display='none';
+}
+['l-principal','l-rate','l-installments','l-freq'].forEach(id=>document.getElementById(id).addEventListener('input',updateLoanPreview));
+
+document.getElementById('add-loan-btn').addEventListener('click',()=>{
+  const name=document.getElementById('l-name').value.trim();
+  const email=document.getElementById('l-email').value.trim();
+  const principal=parseFloat(document.getElementById('l-principal').value)||0;
+  const interestRate=parseFloat(document.getElementById('l-rate').value)||0;
+  const installments=parseInt(document.getElementById('l-installments').value)||1;
+  const frequency=document.getElementById('l-freq').value;
+  const startDate=document.getElementById('l-start').value||new Date().toISOString().split('T')[0];
+  if(!name||!principal)return;
+  state.loans.push({friendName:name,email,principal,interestRate,installments,frequency,startDate,paid:new Array(installments).fill(false),showSchedule:true});
+  document.getElementById('l-name').value='';document.getElementById('l-email').value='';
+  document.getElementById('l-principal').value='';document.getElementById('l-rate').value='';
+  document.getElementById('l-installments').value='';document.getElementById('l-start').value='';
+  document.getElementById('l-preview').style.display='none';
+  render();showTab('loans');
+});
+
+document.getElementById('salary-input').addEventListener('input',e=>{state.salary=parseFloat(e.target.value)||0;render();});
+document.getElementById('add-bill-btn').addEventListener('click',()=>{
+  const name=document.getElementById('bill-name').value.trim();
+  const cat=document.getElementById('bill-cat').value;
+  const amount=parseFloat(document.getElementById('bill-amount').value)||0;
+  const dueDate=document.getElementById('bill-due').value;
+  const recurring=document.getElementById('bill-recurring').checked;
+  if(!name||!cat||!amount)return;
+  state.bills.push({name,cat,amount,dueDate,recurring});
+  document.getElementById('bill-name').value='';document.getElementById('bill-cat').value='';
+  document.getElementById('bill-amount').value='';document.getElementById('bill-due').value='';
+  document.getElementById('bill-recurring').checked=false;render();
+});
+document.getElementById('set-goal-btn').addEventListener('click',()=>{state.savingsGoal=parseFloat(document.getElementById('goal-input').value)||0;render();});
+document.getElementById('threshold-slider').addEventListener('input',e=>{state.threshold=+e.target.value;document.getElementById('threshold-val').textContent=e.target.value+'% of salary';render();});
+document.getElementById('email-input').addEventListener('input',e=>{state.email=e.target.value;});
+document.getElementById('ejs-service').addEventListener('input',e=>{state.ejsService=e.target.value;});
+document.getElementById('ejs-template').addEventListener('input',e=>{state.ejsTemplate=e.target.value;});
+document.getElementById('ejs-loan-template').addEventListener('input',e=>{state.ejsLoanTemplate=e.target.value;});
+document.getElementById('ejs-pubkey').addEventListener('input',e=>{state.ejsPubkey=e.target.value;});
+
+async function sendTestEmail(){
+  const svc=state.ejsService;const tpl=state.ejsTemplate;const pk=state.ejsPubkey;
+  const statusEl=document.getElementById('send-status');
+  if(!state.email){statusEl.style.color='#A32D2D';statusEl.textContent='Enter your email first.';return;}
+  if(!svc||!tpl||!pk){statusEl.style.color='#A32D2D';statusEl.textContent='Fill in EmailJS credentials.';return;}
+  statusEl.style.color='#854F0B';statusEl.textContent='Sending…';
+  const soon=dueSoonBills();
+  try{
+    emailjs.init(pk);
+    await emailjs.send(svc,tpl,{to_email:state.email,bill_name:soon.length?soon[0].name:'Test Bill',due_date:soon.length?new Date(soon[0].dueDate).toLocaleDateString('en-PH',{month:'long',day:'numeric',year:'numeric'}):'N/A',amount:soon.length?fmt(soon[0].amount):'₱0'});
+    statusEl.style.color='#0F6E56';statusEl.textContent='Test email sent!';
+  }catch(e){statusEl.style.color='#A32D2D';statusEl.textContent='Failed: '+(e.text||'Check credentials.');}
+}
+document.getElementById('test-email-btn').addEventListener('click',sendTestEmail);
+
+function exportPDF(){
+  const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});
+  doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('Budget Report — '+months[now.getMonth()]+' '+now.getFullYear(),20,20);
+  doc.setFont('helvetica','normal');doc.setFontSize(11);
+  doc.line(20,24,190,24);
+  doc.text('Salary: '+fmt(state.salary),20,31);doc.text('Total Bills: '+fmt(totalBills()),20,38);doc.text('Savings Goal: '+fmt(state.savingsGoal),20,45);doc.text('Remaining: '+fmt(remaining()),20,52);
+  doc.line(20,56,190,56);
+  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('Bills',20,63);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);let y=70;
+  state.bills.forEach(b=>{doc.text(b.name+' — '+b.cat+(b.dueDate?' (due '+new Date(b.dueDate).toLocaleDateString('en-PH',{month:'short',day:'numeric'})+')':''),22,y);doc.text(fmt(b.amount),175,y,{align:'right'});y+=7;if(y>265){doc.addPage();y=20;}});
+  y+=3;doc.line(20,y,190,y);y+=7;
+  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('Loans',20,y);y+=7;
+  doc.setFont('helvetica','normal');doc.setFontSize(10);
+  state.loans.forEach(loan=>{
+    const sc=getLoanSchedule(loan);
+    doc.setFont('helvetica','bold');doc.text(loan.friendName+' — Principal: '+fmt(loan.principal)+' | Interest: '+loan.interestRate+'% | Total: '+fmtD(sc.total),22,y);y+=5;
+    doc.setFont('helvetica','normal');
+    sc.schedule.forEach(row=>{
+      const status=row.paid?'PAID':'Pending';
+      doc.text('#'+row.num+' — '+new Date(row.dueDate).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})+'  '+fmtD(row.amount)+'  ['+status+']',26,y);y+=5;
+      if(y>270){doc.addPage();y=20;}
+    });
+    y+=3;if(y>270){doc.addPage();y=20;}
+  });
+  doc.save('budget-'+months[now.getMonth()]+'-'+now.getFullYear()+'.pdf');
+}
+document.getElementById('export-btn').addEventListener('click',exportPDF);
+document.getElementById('export-btn2').addEventListener('click',exportPDF);
+
+const tabs=['dashboard','bills','savings','loans','settings'];
+function showTab(t){tabs.forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';});document.querySelectorAll('.tab-btn').forEach(btn=>{btn.classList.toggle('active',btn.dataset.tab===t);});}
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showTab(btn.dataset.tab)));
+showTab('dashboard');render();
+
+// Register the Service Worker for Offline Use
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker registered'))
+      .catch(err => console.log('Service Worker failed', err));
+  });
+}
+</script>
