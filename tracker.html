@@ -3,8 +3,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Budget Tracker">
+
 <h2 class="sr-only">Monthly Budget Tracker with loans, bills, savings, and email notifications</h2>
 <style>
+/* (I'm keeping your existing styles here - keep them in your file) */
+:root { --font-sans: system-ui, -apple-system, sans-serif; --color-background-primary: #ffffff; --color-background-secondary: #f4f4f4; --color-text-primary: #1a1a1a; --color-text-secondary: #666666; --color-border-secondary: #d1d1d1; --color-border-tertiary: #e5e5e5; --border-radius-md: 6px; --border-radius-lg: 10px; }
 *{box-sizing:border-box;margin:0;padding:0}
 .app{max-width:380px;margin:0 auto;padding-bottom:68px;font-family:var(--font-sans)}
 .header{padding:14px 16px 10px;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between}
@@ -67,8 +70,6 @@
 .emailjs-note{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px;font-size:11px;color:var(--color-text-secondary);margin-top:8px;line-height:1.6}
 .emailjs-note a{color:#0F6E56}
 .empty{text-align:center;padding:18px 0;color:var(--color-text-secondary);font-size:12px}
-
-/* Loans */
 .loan-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:10px;overflow:hidden}
 .loan-header{padding:12px 13px;display:flex;align-items:flex-start;gap:10px}
 .loan-avatar{width:36px;height:36px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#185FA5;flex-shrink:0}
@@ -114,7 +115,6 @@
   <input type="number" id="salary-input" placeholder="0" min="0"/>
 </div>
 
-<!-- DASHBOARD -->
 <div id="tab-dashboard" class="section" style="display:none">
   <div id="banner-area"></div>
   <div id="due-soon-area"></div>
@@ -140,7 +140,6 @@
   </div>
 </div>
 
-<!-- BILLS -->
 <div id="tab-bills" class="section" style="display:none">
   <div class="card">
     <div class="card-title">My bills</div>
@@ -166,7 +165,6 @@
   </div>
 </div>
 
-<!-- SAVINGS -->
 <div id="tab-savings" class="section" style="display:none">
   <div class="card">
     <div class="card-title">Savings goal</div>
@@ -181,7 +179,6 @@
   </div>
 </div>
 
-<!-- LOANS -->
 <div id="tab-loans" class="section" style="display:none">
   <div id="loans-list"></div>
   <div class="card">
@@ -208,7 +205,6 @@
   </div>
 </div>
 
-<!-- SETTINGS -->
 <div id="tab-settings" class="section" style="display:none">
   <div class="card">
     <div class="card-title">Budget warning</div>
@@ -544,14 +540,40 @@ document.getElementById('export-btn2').addEventListener('click',exportPDF);
 const tabs=['dashboard','bills','savings','loans','settings'];
 function showTab(t){tabs.forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';});document.querySelectorAll('.tab-btn').forEach(btn=>{btn.classList.toggle('active',btn.dataset.tab===t);});}
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>showTab(btn.dataset.tab)));
-showTab('dashboard');render();
 
-// Register the Service Worker for Offline Use
+// PWA & Persistence Logic
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registered'))
-      .catch(err => console.log('Service Worker failed', err));
+    navigator.serviceWorker.register('./sw.js');
   });
 }
+
+function loadData() {
+  const saved = localStorage.getItem('budget_state');
+  if (saved) {
+    const data = JSON.parse(saved);
+    Object.assign(state, data);
+    if(document.getElementById('salary-input')) document.getElementById('salary-input').value = state.salary || '';
+    if(document.getElementById('goal-input')) document.getElementById('goal-input').value = state.savingsGoal || '';
+    if(document.getElementById('email-input')) document.getElementById('email-input').value = state.email || '';
+    if(document.getElementById('ejs-service')) document.getElementById('ejs-service').value = state.ejsService || '';
+    if(document.getElementById('ejs-template')) document.getElementById('ejs-template').value = state.ejsTemplate || '';
+    if(document.getElementById('ejs-loan-template')) document.getElementById('ejs-loan-template').value = state.ejsLoanTemplate || '';
+    if(document.getElementById('ejs-pubkey')) document.getElementById('ejs-pubkey').value = state.ejsPubkey || '';
+  }
+}
+
+function saveData() {
+  localStorage.setItem('budget_state', JSON.stringify(state));
+}
+
+const originalRender = render;
+render = function() {
+  originalRender();
+  saveData();
+};
+
+loadData();
+showTab('dashboard');
+render();
 </script>
